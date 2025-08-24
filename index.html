@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>React Search • Modern UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg-1:#0f1020;
+      --bg-2:#1a1b3a;
+      --accent:#7c5cff;
+      --accent-2:#28d7a5;
+      --text:#e8e8f0;
+      --muted:#a9acc3;
+      --glass:rgba(255,255,255,0.08);
+      --glass-border:rgba(255,255,255,0.18);
+      --ring:rgba(124,92,255,0.45);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 10% 10%, #2e2d55 0%, transparent 50%),
+        radial-gradient(1000px 800px at 90% 20%, #1a3a32 0%, transparent 50%),
+        linear-gradient(120deg, var(--bg-1), var(--bg-2));
+      overflow-x:hidden;
+      display:grid;
+      place-items:center;
+    }
+
+    .bg-blur{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:-1;
+      filter:saturate(1.2);
+    }
+    .blob{
+      position:absolute;
+      width:48vmax; height:48vmax;
+      background:radial-gradient(circle at 30% 30%, var(--accent), transparent 55%),
+                 radial-gradient(circle at 70% 60%, var(--accent-2), transparent 55%);
+      opacity:0.28;
+      filter:blur(40px);
+      animation:float 22s ease-in-out infinite;
+    }
+    .blob.b2{
+      top:-10vmax; right:-8vmax; transform:translateZ(0) rotate(20deg);
+      animation-duration:28s; opacity:0.22;
+    }
+    .blob.b1{bottom:-12vmax; left:-10vmax}
+    @keyframes float{
+      0%,100% { transform:translate3d(0,0,0) rotate(0deg) }
+      50%     { transform:translate3d(2vmax,-1vmax,0) rotate(12deg) }
+    }
+
+    .card{
+      width:min(780px, 92vw);
+      background:var(--glass);
+      border:1px solid var(--glass-border);
+      border-radius:20px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding:28px;
+    }
+
+    .header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:16px; margin-bottom:18px;
+    }
+    .title{
+      font-weight:600; letter-spacing:0.2px; font-size:18px; color:#f5f5ff;
+    }
+    .badge{
+      padding:6px 10px; border-radius:999px;
+      background:linear-gradient(120deg, rgba(124,92,255,.2), rgba(40,215,165,.2));
+      border:1px solid rgba(255,255,255,0.18);
+      font-size:12px; color:#dcdcf7;
+    }
+
+    .search{ position:relative; }
+    .search input{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(12,12,24,0.55);
+      color:var(--text);
+      padding:14px 44px 14px 44px;
+      outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .search input::placeholder{ color:#9aa0b4 }
+    .search input:focus{
+      border-color:var(--ring);
+      box-shadow:0 0 0 6px rgba(124,92,255,0.15);
+      background:rgba(20,20,35,0.65);
+    }
+    .search .icon{
+      position:absolute; left:14px; top:50%; transform:translateY(-50%);
+      width:20px; height:20px; color:#bfc3da; opacity:0.9;
+    }
+    .search .kbd{
+      position:absolute; right:10px; top:50%; transform:translateY(-50%);
+      font-size:12px; color:#bfc3da; opacity:0.8;
+      border:1px solid rgba(255,255,255,0.18);
+      padding:3px 6px; border-radius:6px; background:rgba(255,255,255,0.06);
+    }
+
+    .results{
+      margin-top:16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      overflow:hidden;
+      background:rgba(8,8,18,0.45);
+    }
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px;
+      gap:12px;
+      transition: background .12s ease, transform .12s ease;
+    }
+    .row:hover{ background:rgba(255,255,255,0.06) }
+    .row:active{ transform:scale(0.997) }
+    .row + .row{ border-top:1px solid rgba(255,255,255,0.08) }
+    .row .meta{
+      display:flex; align-items:center; gap:12px; min-width:0;
+    }
+    .chip{
+      font-size:12px; color:#dfe3ff; opacity:0.85;
+      border:1px solid rgba(255,255,255,0.2);
+      padding:3px 8px; border-radius:999px;
+      background:linear-gradient(120deg, rgba(124,92,255,.12), rgba(40,215,165,.12));
+      white-space:nowrap;
+    }
+    .name{
+      color:#f2f3ff; font-weight:500; letter-spacing:.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .muted{ color:var(--muted); font-size:13px }
+
+    .footer{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-top:14px; color:var(--muted); font-size:13px;
+    }
+    .count{ color:#dcdcf7 }
+    .controls{ display:flex; align-items:center; gap:8px }
+    .btn{
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.06);
+      color:#e7e9ff;
+      padding:8px 12px; border-radius:10px; cursor:pointer;
+      transition: background .12s ease, border-color .12s ease, transform .05s ease;
+    }
+    .btn:hover{ background:rgba(255,255,255,0.10) }
+    .btn:active{ transform:translateY(1px) }
+
+    @media (max-width:560px){
+      .header{ flex-direction:column; align-items:flex-start }
+      .badge{ align-self:flex-start }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-blur">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+  </div>
+
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    const DATA = [
+      { name: "Bitcoin", tag: "BTC", type: "Asset" },
+      { name: "Ethereum", tag: "ETH", type: "Asset" },
+      { name: "Avalanche", tag: "AVAX", type: "Asset" },
+      { name: "Polygon", tag: "MATIC", type: "Asset" },
+      { name: "Solana", tag: "SOL", type: "Asset" },
+      { name: "Uniswap", tag: "UNI", type: "Protocol" },
+      { name: "Aave", tag: "AAVE", type: "Protocol" },
+      { name: "Chainlink", tag: "LINK", type: "Oracle" },
+      { name: "Lido", tag: "LDO", type: "Staking" },
+      { name: "OpenZeppelin", tag: "OZ", type: "Library" },
+      { name: "Hardhat", tag: "HH", type: "Tooling" },
+      { name: "Foundry", tag: "FOUNDRY", type: "Tooling" },
+      { name: "Curve", tag: "CRV", type: "Protocol" },
+      { name: "SushiSwap", tag: "SUSHI", type: "Protocol" }
+    ];
+
+    function useDebouncedValue(value, delayMs){
+      const [debounced, setDebounced] = useState(value);
+      React.useEffect(() => {
+        const id = setTimeout(() => setDebounced(value), delayMs);
+        return () => clearTimeout(id);
+      }, [value, delayMs]);
+      return debounced;
+    }
+
+    function SearchIcon(props){
+      return (
+        <svg className="icon" viewBox="0 0 24 24" fill="none" {...props}>
+          <path d="M21 21l-4.3-4.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.6"/>
+        </svg>
+      );
+    }
+
+    function App(){
+      const [query, setQuery] = useState("");
+      const inputRef = useRef(null);
+      const debounced = useDebouncedValue(query, 150);
+
+      const results = useMemo(() => {
+        if(!debounced.trim()) return DATA.slice(0, 6);
+        const q = debounced.toLowerCase();
+        return DATA.filter(x =>
+          x.name.toLowerCase().includes(q) ||
+          x.tag.toLowerCase().includes(q) ||
+          x.type.toLowerCase().includes(q)
+        );
+      }, [debounced]);
+
+      useEffect(() => { inputRef.current?.focus(); }, []);
+
+      return (
+        <div className="card">
+          <div className="header">
+            <div className="title">Search Catalog</div>
+            <div className="badge">Modern UI · React 18</div>
+          </div>
+
+          <div className="search">
+            <SearchIcon />
+            <input
+              ref={inputRef}
+              value={query}
+              placeholder="Search assets, protocols, tooling..."
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if(e.key === "Escape") setQuery("");
+              }}
+              aria-label="Search"
+              spellCheck="false"
+            />
+            <div className="kbd">Esc</div>
+          </div>
+
+          <div className="results" role="listbox" aria-label="Search results">
+            {results.length === 0 ? (
+              <div className="row">
+                <div className="meta">
+                  <div className="name">No results</div>
+                </div>
+                <div className="muted">Try another keyword</div>
+              </div>
+            ) : results.map((r, i) => (
+              <div key={r.name + i} className="row" role="option">
+                <div className="meta">
+                  <span className="chip">{r.type}</span>
+                  <div className="name">{r.name}</div>
+                </div>
+                <div className="muted">{r.tag}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="footer">
+            <div>
+              <span className="count">{results.length}</span> items
+            </div>
+            <div className="controls">
+              <button className="btn" onClick={() => setQuery("")}>Clear</button>
+              <button className="btn" onClick={() => inputRef.current?.focus()}>Focus</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+
+
